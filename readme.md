@@ -30,4 +30,6 @@ python 2.generate-using-seeds.py
 
 ## 说明
 
+大量参考了[https://github.com/NVlabs/stylegan2-ada-pytorch](https://github.com/NVlabs/stylegan2-ada-pytorch)。
+
 实现不完全正确，可能有精度问题，图像输出和torch版本相差较大，同时自定义算子都采用了最笨的实现方式，速度也慢许多。
