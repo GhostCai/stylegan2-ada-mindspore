@@ -33,7 +33,7 @@ python 2.generate-using-seeds.py
 反投影图片（以obama.png为例）
 
 ```
-3.project-real-image.py
+python 3.project-real-image.py
 ```
 
 ## 说明
