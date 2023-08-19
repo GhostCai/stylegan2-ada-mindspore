@@ -13,6 +13,7 @@ pip install torch rich pretty_errors face_alignment dlib tqdm
 
 + 从[NVlabs/stylegan2-ada-pytorch: StyleGAN2-ADA - Official PyTorch implementation (github.com)](https://github.com/NVlabs/stylegan2-ada-pytorch)获取`stylegan2-ffhq-config-f.pkl`，放置到`./ckpt`下，运行`python 1.convert-to-mindspore.py`得到mindspore版的权重。
 + 从[official/cv/VGG/vgg16 · MindSpore/models - 码云 - 开源中国 (gitee.com)](https://gitee.com/mindspore/models/tree/master/official/cv/VGG/vgg16)获取`vgg16_bn_ascend_v170_imagenet2012_official_cv_top1acc74.33_top5acc92.1.ckpt`，改名为`vgg16.ckpt`，放置到`./ckpt`下。
++ 从[http://dlib.net/files/](http://dlib.net/files/)获取`shape_predictor_68_face_landmarks.dat.bz2`，解压后将'shape_predictor_68_face_landmarks.dat'放置到'./ckpt'下。
 
 ## 运行
 
