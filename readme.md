@@ -2,7 +2,7 @@
 
 MindSpore版的StyleGAN2-ada，以及简单的反投影（使用ModelZoo的VGG16实现lpips loss）以及属性编辑
 
-![image-20230818161105253](readme.assets/image-20230818161105253.png)
+![image-20230818161105253](readme.assets/image-20230818161105253.jpeg)
 
 ## 安装
 
