@@ -19,7 +19,9 @@ pip install torch rich pretty_errors face_alignment dlib tqdm
 
 首先得到mindspore版的权重
 
-```python 1.convert-to-mindspore.py```
+```
+python 1.convert-to-mindspore.py
+```
 
 
 随机生成图片
