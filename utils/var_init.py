@@ -21,6 +21,7 @@ import numpy as np
 import mindspore.nn as nn
 from mindspore.common import initializer as init
 
+
 def _calculate_gain(nonlinearity, param=None):
     r"""
     Return the recommended gain value for the given nonlinearity function.
@@ -44,23 +45,36 @@ def _calculate_gain(nonlinearity, param=None):
     Examples:
         >>> gain = calculate_gain('leaky_relu', 0.2)  # leaky_relu with negative_slope=0.2
     """
-    linear_fns = ['linear', 'conv1d', 'conv2d', 'conv3d', 'conv_transpose1d', 'conv_transpose2d', 'conv_transpose3d']
-    if nonlinearity in linear_fns or nonlinearity == 'sigmoid':
+    linear_fns = [
+        "linear",
+        "conv1d",
+        "conv2d",
+        "conv3d",
+        "conv_transpose1d",
+        "conv_transpose2d",
+        "conv_transpose3d",
+    ]
+    if nonlinearity in linear_fns or nonlinearity == "sigmoid":
         return 1
-    if nonlinearity == 'tanh':
+    if nonlinearity == "tanh":
         return 5.0 / 3
-    if nonlinearity == 'relu':
+    if nonlinearity == "relu":
         return math.sqrt(2.0)
-    if nonlinearity == 'leaky_relu':
+    if nonlinearity == "leaky_relu":
         if param is None:
             negative_slope = 0.01
-        elif not isinstance(param, bool) and isinstance(param, int) or isinstance(param, float):
+        elif (
+            not isinstance(param, bool)
+            and isinstance(param, int)
+            or isinstance(param, float)
+        ):
             negative_slope = param
         else:
             raise ValueError("negative_slope {} not a valid number".format(param))
-        return math.sqrt(2.0 / (1 + negative_slope ** 2))
+        return math.sqrt(2.0 / (1 + negative_slope**2))
 
     raise ValueError("Unsupported nonlinearity {}".format(nonlinearity))
+
 
 def _assignment(arr, num):
     """Assign the value of `num` to `arr`."""
@@ -75,6 +89,7 @@ def _assignment(arr, num):
             arr[:] = num
     return arr
 
+
 def _calculate_in_and_out(arr):
     """
     Calculate n_in and n_out.
@@ -87,7 +102,9 @@ def _calculate_in_and_out(arr):
     """
     dim = len(arr.shape)
     if dim < 2:
-        raise ValueError("If initialize data with xavier uniform, the dimension of data must greater than 1.")
+        raise ValueError(
+            "If initialize data with xavier uniform, the dimension of data must greater than 1."
+        )
 
     n_in = arr.shape[1]
     n_out = arr.shape[0]
@@ -98,14 +115,18 @@ def _calculate_in_and_out(arr):
         n_out *= counter
     return n_in, n_out
 
+
 def _select_fan(array, mode):
     mode = mode.lower()
-    valid_modes = ['fan_in', 'fan_out']
+    valid_modes = ["fan_in", "fan_out"]
     if mode not in valid_modes:
-        raise ValueError("Mode {} not supported, please use one of {}".format(mode, valid_modes))
+        raise ValueError(
+            "Mode {} not supported, please use one of {}".format(mode, valid_modes)
+        )
 
     fan_in, fan_out = _calculate_in_and_out(array)
-    return fan_in if mode == 'fan_in' else fan_out
+    return fan_in if mode == "fan_in" else fan_out
+
 
 class KaimingInit(init.Initializer):
     r"""
@@ -121,10 +142,12 @@ class KaimingInit(init.Initializer):
         nonlinearity: the non-linear function, recommended to use only with
             ``'relu'`` or ``'leaky_relu'`` (default).
     """
-    def __init__(self, a=0, mode='fan_in', nonlinearity='leaky_relu'):
+
+    def __init__(self, a=0, mode="fan_in", nonlinearity="leaky_relu"):
         super(KaimingInit, self).__init__()
         self.mode = mode
         self.gain = _calculate_gain(nonlinearity, a)
+
     def _initialize(self, arr):
         pass
 
@@ -187,24 +210,32 @@ def default_recurisive_init(custom_cell):
     """default_recurisive_init"""
     for _, cell in custom_cell.cells_and_names():
         if isinstance(cell, nn.Conv2d):
-            cell.weight.set_data(init.initializer(KaimingUniform(a=math.sqrt(5)),
-                                                  cell.weight.shape,
-                                                  cell.weight.dtype))
+            cell.weight.set_data(
+                init.initializer(
+                    KaimingUniform(a=math.sqrt(5)), cell.weight.shape, cell.weight.dtype
+                )
+            )
             if cell.bias is not None:
                 fan_in, _ = _calculate_in_and_out(cell.weight)
                 bound = 1 / math.sqrt(fan_in)
-                cell.bias.set_data(init.initializer(init.Uniform(bound),
-                                                    cell.bias.shape,
-                                                    cell.bias.dtype))
+                cell.bias.set_data(
+                    init.initializer(
+                        init.Uniform(bound), cell.bias.shape, cell.bias.dtype
+                    )
+                )
         elif isinstance(cell, nn.Dense):
-            cell.weight.set_data(init.initializer(KaimingUniform(a=math.sqrt(5)),
-                                                  cell.weight.shape,
-                                                  cell.weight.dtype))
+            cell.weight.set_data(
+                init.initializer(
+                    KaimingUniform(a=math.sqrt(5)), cell.weight.shape, cell.weight.dtype
+                )
+            )
             if cell.bias is not None:
                 fan_in, _ = _calculate_in_and_out(cell.weight)
                 bound = 1 / math.sqrt(fan_in)
-                cell.bias.set_data(init.initializer(init.Uniform(bound),
-                                                    cell.bias.shape,
-                                                    cell.bias.dtype))
+                cell.bias.set_data(
+                    init.initializer(
+                        init.Uniform(bound), cell.bias.shape, cell.bias.dtype
+                    )
+                )
         elif isinstance(cell, (nn.BatchNorm2d, nn.BatchNorm1d)):
             pass

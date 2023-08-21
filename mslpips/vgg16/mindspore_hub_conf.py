@@ -16,6 +16,7 @@
 from src.vgg import vgg16 as VGG16
 from model_utils.config import get_config_static
 
+
 def vgg16(*args, **kwargs):
     return VGG16(*args, **kwargs)
 

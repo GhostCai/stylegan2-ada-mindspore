@@ -24,7 +24,12 @@ from mindspore import Tensor
 from mindspore import context
 from mindspore.communication.management import init, get_rank, get_group_size
 from mindspore.nn.optim.momentum import Momentum
-from mindspore.train.callback import ModelCheckpoint, CheckpointConfig, LossMonitor, TimeMonitor
+from mindspore.train.callback import (
+    ModelCheckpoint,
+    CheckpointConfig,
+    LossMonitor,
+    TimeMonitor,
+)
 from mindspore.train.model import Model
 from mindspore.context import ParallelMode
 from mindspore.train.serialization import load_param_into_net, load_checkpoint
@@ -47,15 +52,20 @@ from model_utils.device_adapter import get_device_id, get_rank_id, get_device_nu
 
 set_seed(1)
 
+
 def modelarts_pre_process():
-    '''modelarts pre process function.'''
+    """modelarts pre process function."""
+
     def unzip(zip_file, save_dir):
         import zipfile
+
         s_time = time.time()
-        if not os.path.exists(os.path.join(save_dir, config.modelarts_dataset_unzip_name)):
+        if not os.path.exists(
+            os.path.join(save_dir, config.modelarts_dataset_unzip_name)
+        ):
             zip_isexist = zipfile.is_zipfile(zip_file)
             if zip_isexist:
-                fz = zipfile.ZipFile(zip_file, 'r')
+                fz = zipfile.ZipFile(zip_file, "r")
                 data_num = len(fz.namelist())
                 print("Extract Start...")
                 print("unzip file num: {}".format(data_num))
@@ -63,11 +73,18 @@ def modelarts_pre_process():
                 i = 0
                 for file in fz.namelist():
                     if i % data_print == 0:
-                        print("unzip percent: {}%".format(int(i * 100 / data_num)), flush=True)
+                        print(
+                            "unzip percent: {}%".format(int(i * 100 / data_num)),
+                            flush=True,
+                        )
                     i += 1
                     fz.extract(file, save_dir)
-                print("cost time: {}min:{}s.".format(int((time.time() - s_time) / 60),
-                                                     int(int(time.time() - s_time) % 60)))
+                print(
+                    "cost time: {}min:{}s.".format(
+                        int((time.time() - s_time) / 60),
+                        int(int(time.time() - s_time) % 60),
+                    )
+                )
                 print("Extract Done.")
             else:
                 print("This is not zip.")
@@ -75,7 +92,9 @@ def modelarts_pre_process():
             print("Zip has been extracted.")
 
     if config.need_modelarts_dataset_unzip:
-        zip_file_1 = os.path.join(config.data_path, config.modelarts_dataset_unzip_name + ".zip")
+        zip_file_1 = os.path.join(
+            config.data_path, config.modelarts_dataset_unzip_name + ".zip"
+        )
         save_dir_1 = os.path.join(config.data_path)
 
         sync_lock = "/tmp/unzip_sync.lock"
@@ -106,22 +125,33 @@ def modelarts_pre_process():
                 break
             time.sleep(1)
 
-        print("Device: {}, Finish sync unzip data from {} to {}.".format(device_id, zip_file_1, save_dir_1))
+        print(
+            "Device: {}, Finish sync unzip data from {} to {}.".format(
+                device_id, zip_file_1, save_dir_1
+            )
+        )
 
     config.ckpt_path = os.path.join(config.output_path, config.ckpt_path)
 
 
 @moxing_wrapper(pre_process=modelarts_pre_process)
 def run_train():
-    '''run train'''
-    config.lr_epochs = list(map(int, config.lr_epochs.split(',')))
+    """run train"""
+    config.lr_epochs = list(map(int, config.lr_epochs.split(",")))
     if list(map(lambda x: x % 32, config.image_size)) != [0, 0]:
-        print("Image size is set to", config.image_size, ". Image size should be divisible by 32.")
+        print(
+            "Image size is set to",
+            config.image_size,
+            ". Image size should be divisible by 32.",
+        )
     config.per_batch_size = config.batch_size
 
     _enable_graph_kernel = config.device_target == "GPU"
-    context.set_context(mode=context.GRAPH_MODE,
-                        enable_graph_kernel=_enable_graph_kernel, device_target=config.device_target)
+    context.set_context(
+        mode=context.GRAPH_MODE,
+        enable_graph_kernel=_enable_graph_kernel,
+        device_target=config.device_target,
+    )
     config.rank = get_rank_id()
     config.device_id = get_device_id()
     config.group_size = get_device_num()
@@ -139,8 +169,12 @@ def run_train():
 
         device_num = config.group_size
         context.reset_auto_parallel_context()
-        context.set_auto_parallel_context(device_num=device_num, parallel_mode=ParallelMode.DATA_PARALLEL,
-                                          gradients_mean=True, all_reduce_fusion_config=[15, 18])
+        context.set_auto_parallel_context(
+            device_num=device_num,
+            parallel_mode=ParallelMode.DATA_PARALLEL,
+            gradients_mean=True,
+            all_reduce_fusion_config=[15, 18],
+        )
     else:
         if config.device_target == "Ascend":
             context.set_context(device_id=config.device_id)
@@ -154,23 +188,34 @@ def run_train():
         config.rank_save_ckpt_flag = 1
 
     # logger
-    config.outputs_dir = os.path.join(config.ckpt_path,
-                                      datetime.datetime.now().strftime('%Y-%m-%d_time_%H_%M_%S'))
+    config.outputs_dir = os.path.join(
+        config.ckpt_path, datetime.datetime.now().strftime("%Y-%m-%d_time_%H_%M_%S")
+    )
     config.logger = get_logger(config.outputs_dir, config.rank)
 
     if config.dataset == "cifar10":
-        dataset = vgg_create_dataset(config.data_dir, config.image_size, config.per_batch_size,
-                                     config.rank, config.group_size)
+        dataset = vgg_create_dataset(
+            config.data_dir,
+            config.image_size,
+            config.per_batch_size,
+            config.rank,
+            config.group_size,
+        )
     else:
-        dataset = classification_dataset(config.data_dir, config.image_size, config.per_batch_size,
-                                         config.rank, config.group_size)
+        dataset = classification_dataset(
+            config.data_dir,
+            config.image_size,
+            config.per_batch_size,
+            config.rank,
+            config.group_size,
+        )
 
     batch_num = dataset.get_dataset_size()
     config.steps_per_epoch = dataset.get_dataset_size()
     config.logger.save_args(config)
 
     # network
-    config.logger.important_info('start create network')
+    config.logger.important_info("start create network")
 
     # get network and init
     network = vgg16(config.num_classes, config)
@@ -180,60 +225,95 @@ def run_train():
         load_param_into_net(network, load_checkpoint(config.pre_trained))
 
     # lr scheduler
-    if config.lr_scheduler == 'exponential':
-        lr = warmup_step_lr(config.lr,
-                            config.lr_epochs,
-                            config.steps_per_epoch,
-                            config.warmup_epochs,
-                            config.max_epoch,
-                            gamma=config.lr_gamma,
-                            )
-    elif config.lr_scheduler == 'cosine_annealing':
-        lr = warmup_cosine_annealing_lr(config.lr,
-                                        config.steps_per_epoch,
-                                        config.warmup_epochs,
-                                        config.max_epoch,
-                                        config.T_max,
-                                        config.eta_min)
-    elif config.lr_scheduler == 'step':
-        lr = lr_steps(0, lr_init=config.lr_init, lr_max=config.lr_max, warmup_epochs=config.warmup_epochs,
-                      total_epochs=config.max_epoch, steps_per_epoch=batch_num)
+    if config.lr_scheduler == "exponential":
+        lr = warmup_step_lr(
+            config.lr,
+            config.lr_epochs,
+            config.steps_per_epoch,
+            config.warmup_epochs,
+            config.max_epoch,
+            gamma=config.lr_gamma,
+        )
+    elif config.lr_scheduler == "cosine_annealing":
+        lr = warmup_cosine_annealing_lr(
+            config.lr,
+            config.steps_per_epoch,
+            config.warmup_epochs,
+            config.max_epoch,
+            config.T_max,
+            config.eta_min,
+        )
+    elif config.lr_scheduler == "step":
+        lr = lr_steps(
+            0,
+            lr_init=config.lr_init,
+            lr_max=config.lr_max,
+            warmup_epochs=config.warmup_epochs,
+            total_epochs=config.max_epoch,
+            steps_per_epoch=batch_num,
+        )
     else:
         raise NotImplementedError(config.lr_scheduler)
 
     # optimizer
-    opt = Momentum(params=get_param_groups(network),
-                   learning_rate=Tensor(lr),
-                   momentum=config.momentum,
-                   weight_decay=config.weight_decay,
-                   loss_scale=config.loss_scale)
+    opt = Momentum(
+        params=get_param_groups(network),
+        learning_rate=Tensor(lr),
+        momentum=config.momentum,
+        weight_decay=config.weight_decay,
+        loss_scale=config.loss_scale,
+    )
 
     if config.dataset == "cifar10":
-        loss = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction='mean')
-        model = Model(network, loss_fn=loss, optimizer=opt, metrics={'acc'},
-                      amp_level="O2", keep_batchnorm_fp32=False, loss_scale_manager=None)
+        loss = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction="mean")
+        model = Model(
+            network,
+            loss_fn=loss,
+            optimizer=opt,
+            metrics={"acc"},
+            amp_level="O2",
+            keep_batchnorm_fp32=False,
+            loss_scale_manager=None,
+        )
     else:
         if not config.label_smooth:
             config.label_smooth_factor = 0.0
-        loss = CrossEntropy(smooth_factor=config.label_smooth_factor, num_classes=config.num_classes)
+        loss = CrossEntropy(
+            smooth_factor=config.label_smooth_factor, num_classes=config.num_classes
+        )
 
-        loss_scale_manager = FixedLossScaleManager(config.loss_scale, drop_overflow_update=False)
-        model = Model(network, loss_fn=loss, optimizer=opt, loss_scale_manager=loss_scale_manager, amp_level="O2")
+        loss_scale_manager = FixedLossScaleManager(
+            config.loss_scale, drop_overflow_update=False
+        )
+        model = Model(
+            network,
+            loss_fn=loss,
+            optimizer=opt,
+            loss_scale_manager=loss_scale_manager,
+            amp_level="O2",
+        )
 
     # define callbacks
     time_cb = TimeMonitor(data_size=batch_num)
     loss_cb = LossMonitor()
     callbacks = [time_cb, loss_cb]
     if config.rank_save_ckpt_flag:
-        ckpt_config = CheckpointConfig(save_checkpoint_steps=config.ckpt_interval * config.steps_per_epoch,
-                                       keep_checkpoint_max=config.keep_checkpoint_max)
-        save_ckpt_path = os.path.join(config.outputs_dir, 'ckpt_' + str(config.rank) + '/')
-        ckpt_cb = ModelCheckpoint(config=ckpt_config,
-                                  directory=save_ckpt_path,
-                                  prefix='{}'.format(config.rank))
+        ckpt_config = CheckpointConfig(
+            save_checkpoint_steps=config.ckpt_interval * config.steps_per_epoch,
+            keep_checkpoint_max=config.keep_checkpoint_max,
+        )
+        save_ckpt_path = os.path.join(
+            config.outputs_dir, "ckpt_" + str(config.rank) + "/"
+        )
+        ckpt_cb = ModelCheckpoint(
+            config=ckpt_config,
+            directory=save_ckpt_path,
+            prefix="{}".format(config.rank),
+        )
         callbacks.append(ckpt_cb)
 
     model.train(config.max_epoch, dataset, callbacks=callbacks, dataset_sink_mode=True)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run_train()

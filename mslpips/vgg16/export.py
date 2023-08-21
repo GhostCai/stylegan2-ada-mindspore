@@ -28,7 +28,7 @@ from model_utils.device_adapter import get_device_id
 
 
 def modelarts_pre_process():
-    '''modelarts pre process function.'''
+    """modelarts pre process function."""
     config.file_name = os.path.join(config.output_path, config.file_name)
 
 
@@ -48,9 +48,12 @@ def run_export():
     load_checkpoint(config.ckpt_file, net=net)
     net.set_train(False)
 
-    input_data = Tensor(np.zeros([config.batch_size, 3, config.image_size[0], config.image_size[1]]), mstype.float32)
+    input_data = Tensor(
+        np.zeros([config.batch_size, 3, config.image_size[0], config.image_size[1]]),
+        mstype.float32,
+    )
     export(net, input_data, file_name=config.file_name, file_format=config.file_format)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_export()

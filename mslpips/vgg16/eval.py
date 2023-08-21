@@ -66,15 +66,18 @@ def get_top5_acc(top5_arg, gt_class):
 
 
 def modelarts_pre_process():
-    '''modelarts pre process function.'''
+    """modelarts pre process function."""
 
     def unzip(zip_file, save_dir):
         import zipfile
+
         s_time = time.time()
-        if not os.path.exists(os.path.join(save_dir, config.modelarts_dataset_unzip_name)):
+        if not os.path.exists(
+            os.path.join(save_dir, config.modelarts_dataset_unzip_name)
+        ):
             zip_isexist = zipfile.is_zipfile(zip_file)
             if zip_isexist:
-                fz = zipfile.ZipFile(zip_file, 'r')
+                fz = zipfile.ZipFile(zip_file, "r")
                 data_num = len(fz.namelist())
                 print("Extract Start...")
                 print("unzip file num: {}".format(data_num))
@@ -82,11 +85,18 @@ def modelarts_pre_process():
                 i = 0
                 for file in fz.namelist():
                     if i % data_print == 0:
-                        print("unzip percent: {}%".format(int(i * 100 / data_num)), flush=True)
+                        print(
+                            "unzip percent: {}%".format(int(i * 100 / data_num)),
+                            flush=True,
+                        )
                     i += 1
                     fz.extract(file, save_dir)
-                print("cost time: {}min:{}s.".format(int((time.time() - s_time) / 60),
-                                                     int(int(time.time() - s_time) % 60)))
+                print(
+                    "cost time: {}min:{}s.".format(
+                        int((time.time() - s_time) / 60),
+                        int(int(time.time() - s_time) % 60),
+                    )
+                )
                 print("Extract Done.")
             else:
                 print("This is not zip.")
@@ -94,7 +104,9 @@ def modelarts_pre_process():
             print("Zip has been extracted.")
 
     if config.need_modelarts_dataset_unzip:
-        zip_file_1 = os.path.join(config.data_path, config.modelarts_dataset_unzip_name + ".zip")
+        zip_file_1 = os.path.join(
+            config.data_path, config.modelarts_dataset_unzip_name + ".zip"
+        )
         save_dir_1 = os.path.join(config.data_path)
 
         sync_lock = "/tmp/unzip_sync.lock"
@@ -126,7 +138,11 @@ def modelarts_pre_process():
                 break
             time.sleep(1)
 
-        print("Device: {}, Finish sync unzip data from {} to {}.".format(device_id, zip_file_1, save_dir_1))
+        print(
+            "Device: {}, Finish sync unzip data from {} to {}.".format(
+                device_id, zip_file_1, save_dir_1
+            )
+        )
 
     config.log_path = os.path.join(config.output_path, config.log_path)
 
@@ -139,48 +155,68 @@ def run_eval():
     config.group_size = get_device_num()
 
     _enable_graph_kernel = config.device_target == "GPU"
-    context.set_context(mode=context.GRAPH_MODE, enable_graph_kernel=_enable_graph_kernel,
-                        device_target=config.device_target, save_graphs=False)
-    if os.getenv('DEVICE_ID', "not_set").isdigit() and config.device_target == "Ascend":
-        context.set_context(device_id=int(os.getenv('DEVICE_ID')))
+    context.set_context(
+        mode=context.GRAPH_MODE,
+        enable_graph_kernel=_enable_graph_kernel,
+        device_target=config.device_target,
+        save_graphs=False,
+    )
+    if os.getenv("DEVICE_ID", "not_set").isdigit() and config.device_target == "Ascend":
+        context.set_context(device_id=int(os.getenv("DEVICE_ID")))
 
-    config.outputs_dir = os.path.join(config.log_path,
-                                      datetime.datetime.now().strftime('%Y-%m-%d_time_%H_%M_%S'))
+    config.outputs_dir = os.path.join(
+        config.log_path, datetime.datetime.now().strftime("%Y-%m-%d_time_%H_%M_%S")
+    )
 
     config.logger = get_logger(config.outputs_dir, config.rank)
     config.logger.save_args(config)
 
     if config.dataset == "cifar10":
         net = vgg16(num_classes=config.num_classes, args=config)
-        loss = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction='mean')
-        model = Model(net, loss_fn=loss, metrics={'acc'})
+        loss = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction="mean")
+        model = Model(net, loss_fn=loss, metrics={"acc"})
         param_dict = load_checkpoint(config.pre_trained)
         load_param_into_net(net, param_dict)
         net.set_train(False)
-        dataset = vgg_create_dataset(config.data_dir, config.image_size, config.per_batch_size, training=False)
+        dataset = vgg_create_dataset(
+            config.data_dir, config.image_size, config.per_batch_size, training=False
+        )
         res = model.eval(dataset)
         print("result: ", res)
     else:
         # network
-        config.logger.important_info('start create network')
+        config.logger.important_info("start create network")
         if os.path.isdir(config.pre_trained):
-            models = list(glob.glob(os.path.join(config.pre_trained, '*.ckpt')))
+            models = list(glob.glob(os.path.join(config.pre_trained, "*.ckpt")))
             print(models)
             if config.graph_ckpt:
-                f = lambda x: -1 * int(os.path.splitext(os.path.split(x)[-1])[0].split('-')[-1].split('_')[0])
+                f = lambda x: -1 * int(
+                    os.path.splitext(os.path.split(x)[-1])[0]
+                    .split("-")[-1]
+                    .split("_")[0]
+                )
             else:
-                f = lambda x: -1 * int(os.path.splitext(os.path.split(x)[-1])[0].split('_')[-1])
+                f = lambda x: -1 * int(
+                    os.path.splitext(os.path.split(x)[-1])[0].split("_")[-1]
+                )
             config.models = sorted(models, key=f)
         else:
-            config.models = [config.pre_trained,]
+            config.models = [
+                config.pre_trained,
+            ]
         for model in config.models:
             if config.dataset == "custom":
-                dataset = create_dataset(dataset_path=config.eval_path, do_train=False,
-                                         batch_size=config.batch_size,
-                                         eval_image_size=config.image_size,
-                                         enable_cache=False)
+                dataset = create_dataset(
+                    dataset_path=config.eval_path,
+                    do_train=False,
+                    batch_size=config.batch_size,
+                    eval_image_size=config.image_size,
+                    enable_cache=False,
+                )
                 model_config = get_config()
-                network = Vgg(cfg['16'], num_classes=1000, args=model_config, batch_norm=True)
+                network = Vgg(
+                    cfg["16"], num_classes=1000, args=model_config, batch_norm=True
+                )
 
                 # replace head
                 src_head = network.classifier[6]
@@ -188,9 +224,16 @@ def run_eval():
                 head = DenseHead(in_channels, config.num_classes)
                 network.classifier[6] = head
             else:
-                dataset = classification_dataset(config.data_dir, config.image_size, config.per_batch_size, mode='eval')
+                dataset = classification_dataset(
+                    config.data_dir,
+                    config.image_size,
+                    config.per_batch_size,
+                    mode="eval",
+                )
                 network = vgg16(config.num_classes, config, phase="test")
-            eval_dataloader = dataset.create_tuple_iterator(output_numpy=True, num_epochs=1)
+            eval_dataloader = dataset.create_tuple_iterator(
+                output_numpy=True, num_epochs=1
+            )
 
             # pre_trained
             load_param_into_net(network, load_checkpoint(model))
@@ -221,21 +264,25 @@ def run_eval():
             if config.rank == 0:
                 time_used = time.time() - t_end
                 fps = (img_tot - config.per_batch_size) * config.group_size / time_used
-                config.logger.info('Inference Performance: {:.2f} img/sec'.format(fps))
+                config.logger.info("Inference Performance: {:.2f} img/sec".format(fps))
             results = [[top1_correct], [top5_correct], [img_tot]]
-            config.logger.info('before results=%s', results)
+            config.logger.info("before results=%s", results)
             results = np.array(results)
 
-            config.logger.info('after results=%s', results)
+            config.logger.info("after results=%s", results)
             top1_correct = results[0, 0]
             top5_correct = results[1, 0]
             img_tot = results[2, 0]
             acc1 = 100.0 * top1_correct / img_tot
             acc5 = 100.0 * top5_correct / img_tot
-            config.logger.info('after allreduce eval: top1_correct={}, tot={},'
-                               'acc={:.2f}%(TOP1)'.format(top1_correct, img_tot, acc1))
-            config.logger.info('after allreduce eval: top5_correct={}, tot={},'
-                               'acc={:.2f}%(TOP5)'.format(top5_correct, img_tot, acc5))
+            config.logger.info(
+                "after allreduce eval: top1_correct={}, tot={},"
+                "acc={:.2f}%(TOP1)".format(top1_correct, img_tot, acc1)
+            )
+            config.logger.info(
+                "after allreduce eval: top5_correct={}, tot={},"
+                "acc={:.2f}%(TOP5)".format(top5_correct, img_tot, acc5)
+            )
 
 
 if __name__ == "__main__":

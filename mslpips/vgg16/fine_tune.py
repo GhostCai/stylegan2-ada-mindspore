@@ -25,28 +25,42 @@ from .src.dataset import create_dataset
 ms.set_seed(21)
 
 
-def import_data(train_dataset_path="./datasets/train/", eval_dataset_path="./datasets/test/", batch_size=32):
+def import_data(
+    train_dataset_path="./datasets/train/",
+    eval_dataset_path="./datasets/test/",
+    batch_size=32,
+):
     """
-        Read the dataset
+    Read the dataset
 
-        Args:
-            train_dataset_path(string): the path of train dataset.
-            eval_dataset_path(string): the path of eval dataset.
-            batch_size(int): the batch size of dataset. Default: 32
+    Args:
+        train_dataset_path(string): the path of train dataset.
+        eval_dataset_path(string): the path of eval dataset.
+        batch_size(int): the batch size of dataset. Default: 32
 
-        Returns:
-            dataset_train: the train dataset
-            dataset_val:   the  val  dataset
+    Returns:
+        dataset_train: the train dataset
+        dataset_val:   the  val  dataset
     """
 
-    dataset_train = create_dataset(dataset_path=train_dataset_path, do_train=True,
-                                   batch_size=batch_size, train_image_size=224,
-                                   eval_image_size=224,
-                                   enable_cache=False, cache_session_id=None)
-    dataset_val = create_dataset(dataset_path=eval_dataset_path, do_train=False,
-                                 batch_size=batch_size, train_image_size=224,
-                                 eval_image_size=224,
-                                 enable_cache=False, cache_session_id=None)
+    dataset_train = create_dataset(
+        dataset_path=train_dataset_path,
+        do_train=True,
+        batch_size=batch_size,
+        train_image_size=224,
+        eval_image_size=224,
+        enable_cache=False,
+        cache_session_id=None,
+    )
+    dataset_val = create_dataset(
+        dataset_path=eval_dataset_path,
+        do_train=False,
+        batch_size=batch_size,
+        train_image_size=224,
+        eval_image_size=224,
+        enable_cache=False,
+        cache_session_id=None,
+    )
     # print sample data/label
     data = next(dataset_train.create_dict_iterator())
     images = data["image"]
@@ -84,28 +98,34 @@ def init_weight(net, param_dict):
     return has_trained_epoch, has_trained_step
 
 
-def eval_net(model_config, checkpoint_path='./vgg16.ckpt',
-             train_dataset_path="./datasets/train/",
-             eval_dataset_path="./datasets/test/",
-             batch_size=32):
+def eval_net(
+    model_config,
+    checkpoint_path="./vgg16.ckpt",
+    train_dataset_path="./datasets/train/",
+    eval_dataset_path="./datasets/test/",
+    batch_size=32,
+):
     """
-      eval the accuracy of vgg16 for flower dataset
+    eval the accuracy of vgg16 for flower dataset
 
-      Args:
+    Args:
 
-          model_config(Config in './model_utils/config.py'): vgg16 config
-          checkpoint_path(string): model checkout path(end with '.ckpt'). Default: './vgg16.ckpt'
-          train_dataset_path: the train dataset path. Default: "./datasets/train/"
-          eval_dataset_path:  the eval dataset path.  Default: "./datasets/test/"
-          batch_size: the batch size of dataset. Default: 32
-      Returns:
-          None
-      """
+        model_config(Config in './model_utils/config.py'): vgg16 config
+        checkpoint_path(string): model checkout path(end with '.ckpt'). Default: './vgg16.ckpt'
+        train_dataset_path: the train dataset path. Default: "./datasets/train/"
+        eval_dataset_path:  the eval dataset path.  Default: "./datasets/test/"
+        batch_size: the batch size of dataset. Default: 32
+    Returns:
+        None
+    """
 
     # define val dataset and model
-    _, data_val = import_data(train_dataset_path=train_dataset_path,
-                              eval_dataset_path=eval_dataset_path, batch_size=batch_size)
-    net = Vgg(cfg['16'], num_classes=1000, args=model_config, batch_norm=True)
+    _, data_val = import_data(
+        train_dataset_path=train_dataset_path,
+        eval_dataset_path=eval_dataset_path,
+        batch_size=batch_size,
+    )
+    net = Vgg(cfg["16"], num_classes=1000, args=model_config, batch_norm=True)
 
     # replace head
     src_head = net.classifier[6]
@@ -120,10 +140,11 @@ def eval_net(model_config, checkpoint_path='./vgg16.ckpt',
 
     # define loss
     from mindspore.nn.loss import SoftmaxCrossEntropyWithLogits
-    loss = SoftmaxCrossEntropyWithLogits(sparse=True, reduction='mean')
+
+    loss = SoftmaxCrossEntropyWithLogits(sparse=True, reduction="mean")
 
     # define model
-    model = ms.Model(net, loss_fn=loss, metrics={'top_1_accuracy', 'top_5_accuracy'})
+    model = ms.Model(net, loss_fn=loss, metrics={"top_1_accuracy", "top_5_accuracy"})
 
     # eval step
     res = model.eval(data_val)
@@ -133,51 +154,94 @@ def eval_net(model_config, checkpoint_path='./vgg16.ckpt',
 
 
 cfg = {
-    '11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    '13': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    '16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
-    '19': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+    "11": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "13": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "16": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+    ],
+    "19": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+    ],
 }
 
 
-def finetune_train(model_config,
-                   finetune_checkpoint_path=
-                   './vgg16_bn_ascend_v170_imagenet2012_official_cv_top1acc74.33_top5acc92.1.ckpt',
-                   save_checkpoint_path="./vgg16.ckpt",
-                   train_dataset_path="./datasets/train/",
-                   eval_dataset_path="./datasets/test/",
-                   class_num=5,
-                   num_epochs=10,
-                   learning_rate=0.001,
-                   momentum=0.9,
-                   batch_size=32
-                   ):
+def finetune_train(
+    model_config,
+    finetune_checkpoint_path="./vgg16_bn_ascend_v170_imagenet2012_official_cv_top1acc74.33_top5acc92.1.ckpt",
+    save_checkpoint_path="./vgg16.ckpt",
+    train_dataset_path="./datasets/train/",
+    eval_dataset_path="./datasets/test/",
+    class_num=5,
+    num_epochs=10,
+    learning_rate=0.001,
+    momentum=0.9,
+    batch_size=32,
+):
     """
-         finetune the flower dataset for vgg16
+    finetune the flower dataset for vgg16
 
-         Args:
-             model_config(Config in './model_utils/config.py'): vgg16 config
-             class_num(int): the num of class for dataset. Default: 5
-             num_epochs(int): the training epoch. Default: 10
-             save_checkpoint_path(string): model checkout path for save(end with '.ckpt'). Default: ./vgg16.ckpt
-             train_dataset_path(string): the train dataset path. Default: "./datasets/train/"
-             eval_dataset_path(string):  the eval dataset path.  Default: "./datasets/test/"
-             finetune_checkpoint_path(string): model checkout path for initialize
-                       Default: ./vgg16_bn_ascend_v170_imagenet2012_official_cv_top1acc74.33_top5acc92.1.ckpt
-             learning_rate: the finetune learning rate
-             momentum: the finetune momentum
-             batch_size: the batch size of dataset. Default: 32
-         Returns:
-             None
+    Args:
+        model_config(Config in './model_utils/config.py'): vgg16 config
+        class_num(int): the num of class for dataset. Default: 5
+        num_epochs(int): the training epoch. Default: 10
+        save_checkpoint_path(string): model checkout path for save(end with '.ckpt'). Default: ./vgg16.ckpt
+        train_dataset_path(string): the train dataset path. Default: "./datasets/train/"
+        eval_dataset_path(string):  the eval dataset path.  Default: "./datasets/test/"
+        finetune_checkpoint_path(string): model checkout path for initialize
+                  Default: ./vgg16_bn_ascend_v170_imagenet2012_official_cv_top1acc74.33_top5acc92.1.ckpt
+        learning_rate: the finetune learning rate
+        momentum: the finetune momentum
+        batch_size: the batch size of dataset. Default: 32
+    Returns:
+        None
     """
 
     # read train/val dataset
-    dataset_train, _ = import_data(train_dataset_path=train_dataset_path,
-                                   eval_dataset_path=eval_dataset_path,
-                                   batch_size=batch_size)
+    dataset_train, _ = import_data(
+        train_dataset_path=train_dataset_path,
+        eval_dataset_path=eval_dataset_path,
+        batch_size=batch_size,
+    )
 
     ckpt_param_dict = ms.load_checkpoint(finetune_checkpoint_path)
-    net = Vgg(cfg['16'], num_classes=1000, args=model_config, batch_norm=True)
+    net = Vgg(cfg["16"], num_classes=1000, args=model_config, batch_norm=True)
     init_weight(net=net, param_dict=ckpt_param_dict)
     print("net parameter:")
     for param in net.get_parameters():
@@ -196,8 +260,10 @@ def finetune_train(model_config,
             param.requires_grad = False
 
     # define optimizer and loss
-    opt = nn.Momentum(params=net.trainable_params(), learning_rate=learning_rate, momentum=momentum)
-    loss = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction='mean')
+    opt = nn.Momentum(
+        params=net.trainable_params(), learning_rate=learning_rate, momentum=momentum
+    )
+    loss = nn.SoftmaxCrossEntropyWithLogits(sparse=True, reduction="mean")
 
     # define model
     model = Model(net, loss, opt, metrics={"Accuracy": nn.Accuracy()})
@@ -213,20 +279,28 @@ def finetune_train(model_config,
     ms.save_checkpoint(net, save_checkpoint_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     config = get_config()
     print("config:", config)
     # finetune
-    finetune_train(config,
-                   finetune_checkpoint_path=config.ckpt_file,
-                   save_checkpoint_path=config.save_file, train_dataset_path=config.train_path,
-                   eval_dataset_path=config.eval_path, num_epochs=config.num_epochs, class_num=config.num_classes,
-                   learning_rate=config.lr,
-                   momentum=config.momentum,
-                   batch_size=config.batch_size
-                   )
+    finetune_train(
+        config,
+        finetune_checkpoint_path=config.ckpt_file,
+        save_checkpoint_path=config.save_file,
+        train_dataset_path=config.train_path,
+        eval_dataset_path=config.eval_path,
+        num_epochs=config.num_epochs,
+        class_num=config.num_classes,
+        learning_rate=config.lr,
+        momentum=config.momentum,
+        batch_size=config.batch_size,
+    )
 
     # eval
-    eval_net(config, checkpoint_path=config.save_file, train_dataset_path=config.train_path,
-             eval_dataset_path=config.eval_path,
-             batch_size=config.batch_size)  # 0.8505434782608695
+    eval_net(
+        config,
+        checkpoint_path=config.save_file,
+        train_dataset_path=config.train_path,
+        eval_dataset_path=config.eval_path,
+        batch_size=config.batch_size,
+    )  # 0.8505434782608695

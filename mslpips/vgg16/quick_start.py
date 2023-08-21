@@ -22,13 +22,54 @@ from model_utils.moxing_adapter import config
 from src.vgg import Vgg
 
 # class_name for dataset
-class_name = ['daisy', 'dandelion', 'roses', 'sunflowers', 'tulips']
+class_name = ["daisy", "dandelion", "roses", "sunflowers", "tulips"]
 
 cfg = {
-    '11': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    '13': [64, 64, 'M', 128, 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
-    '16': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 'M', 512, 512, 512, 'M', 512, 512, 512, 'M'],
-    '19': [64, 64, 'M', 128, 128, 'M', 256, 256, 256, 256, 'M', 512, 512, 512, 512, 'M', 512, 512, 512, 512, 'M'],
+    "11": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "13": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "16": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        "M",
+    ],
+    "19": [
+        64,
+        64,
+        "M",
+        128,
+        128,
+        "M",
+        256,
+        256,
+        256,
+        256,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+        512,
+        512,
+        512,
+        512,
+        "M",
+    ],
 }
 
 
@@ -44,18 +85,18 @@ class DenseHead(nn.Cell):
 
 def visualize_model(best_ckpt_path, val_ds, num_classes):
     """
-             visualize model
+    visualize model
 
-             Args:
-                 val_ds: eval dataset
-                 best_ckpt_path(string): the .ckpt file for model to infer
-                 num_classes(int): the class num
+    Args:
+        val_ds: eval dataset
+        best_ckpt_path(string): the .ckpt file for model to infer
+        num_classes(int): the class num
 
-             Returns:
-                 None
-        """
+    Returns:
+        None
+    """
 
-    net = Vgg(cfg['16'], num_classes=1000, args=config, batch_norm=True)
+    net = Vgg(cfg["16"], num_classes=1000, args=config, batch_norm=True)
 
     # replace head
     src_head = net.classifier[6]
@@ -77,7 +118,7 @@ def visualize_model(best_ckpt_path, val_ds, num_classes):
     images = data["image"].asnumpy()
     labels = data["label"].asnumpy()
 
-    output = model.predict(Tensor(data['image']))
+    output = model.predict(Tensor(data["image"]))
     pred = np.argmax(output.asnumpy(), axis=1)
     print("\nAccuracy:", (pred == labels).sum() / len(labels))
 
@@ -86,19 +127,21 @@ def visualize_model(best_ckpt_path, val_ds, num_classes):
     for i in range(len(labels)):
         plt.subplot(4, 8, i + 1)
         # show blue color if right，otherwise show red color
-        color = 'blue' if pred[i] == labels[i] else 'red'
-        plt.title('predict:{}'.format(class_name[pred[i]]), color=color)
+        color = "blue" if pred[i] == labels[i] else "red"
+        plt.title("predict:{}".format(class_name[pred[i]]), color=color)
         picture_show = np.transpose(images[i], (1, 2, 0))
         mean = np.array([0.485, 0.456, 0.406])
         std = np.array([0.229, 0.224, 0.225])
         picture_show = std * picture_show + mean
         picture_show = np.clip(picture_show, 0, 1)
         plt.imshow(picture_show)
-        plt.axis('off')
+        plt.axis("off")
     plt.show()
 
 
-if __name__ == '__main__':
-    _, dataset_val = import_data(train_dataset_path=config.train_path, eval_dataset_path=config.eval_path)
+if __name__ == "__main__":
+    _, dataset_val = import_data(
+        train_dataset_path=config.train_path, eval_dataset_path=config.eval_path
+    )
 
     visualize_model(config.pre_trained, dataset_val, config.num_classes)

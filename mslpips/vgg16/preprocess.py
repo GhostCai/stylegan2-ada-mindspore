@@ -43,17 +43,22 @@ def create_label(result_path, dir_path):
 
     print("[INFO] Completed! Total {} data.".format(total))
 
+
 config.per_batch_size = config.batch_size
 
 
 if __name__ == "__main__":
     if config.dataset == "cifar10":
-        dataset = vgg_create_dataset(config.data_dir, config.image_size, config.per_batch_size, training=False)
+        dataset = vgg_create_dataset(
+            config.data_dir, config.image_size, config.per_batch_size, training=False
+        )
         img_path = os.path.join(config.result_path, "00_data")
         os.makedirs(img_path)
         label_list = []
         for idx, data in enumerate(dataset.create_dict_iterator(output_numpy=True)):
-            file_name = "VGG16_data_bs" + str(config.per_batch_size) + "_" + str(idx) + ".bin"
+            file_name = (
+                "VGG16_data_bs" + str(config.per_batch_size) + "_" + str(idx) + ".bin"
+            )
             file_path = os.path.join(img_path, file_name)
             data["image"].tofile(file_path)
             label_list.append(data["label"])
